@@ -9,32 +9,28 @@ id_user = int(input('Введите id пользователя VK: '))
 ya_token = input('Введите токен с Полигона Яндекс диска: ')
 
 class VK:
-    def __init__(self, access_token, version=5.199):
+    def __init__(self, access_token, id_user, version=5.199):
         self.base_address = 'https://api.vk.com/method/'
         self.params = {
             'access_token': access_token,
             'v': version
         }
+        self.id_user = id_user
         
-    def get_user_photos(self, id_user):
+    def get_user_photos(self, id_user, count=5):
         url = f'{self.base_address}photos.get'
         params = {'owner_id': id_user, # у какого пользователя взять фото 
                   'album_id': 'profile', # profile говорит о фото со стены
                   'photo_sizes': 1, # показывать размеры фото
-                  'extended': 1, # возвращает инфо о фото (лайки)                 
+                  'extended': 1, # возвращает инфо о фото (лайки)
+                  'count': count                 
                   }
         params.update(self.params)
         response = requests.get(url=url, params=params)
         return response.json() # мы работаем по этофу файлику
-    
-    
-class VKPhotoInfo:
-    def __init__(self, access_token, id_user, version=5.199 ):
-        self.id_user = id_user
-        self.vk = VK(access_token, version) # устанавливаем связь с классом VK
           
     def __enter__(self):
-        response = self.vk.get_user_photos(self.id_user)
+        response = self.get_user_photos(self.id_user)
         photos = response['response']['items']
         return photos
     
@@ -43,7 +39,7 @@ class VKPhotoInfo:
             print('Произошла ошибка')
         print('сomplited')
         return True
-        
+    
 
 class YACreateFolder: 
     def __init__(self, ya_token):
@@ -66,7 +62,7 @@ def main():
                         'Authorization': ya_token
                         } 
                         
-    with VKPhotoInfo(vk_token, id_user) as photos: 
+    with VK(vk_token, id_user) as photos: 
         '''Загрузка фото на яндекс диск.'''
     
         for photo in tqdm(photos):
@@ -83,8 +79,6 @@ def main():
     return result               
     
     
-                    
- 
 if __name__ == '__main__':
     print(main())
 
